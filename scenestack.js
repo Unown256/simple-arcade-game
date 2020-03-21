@@ -14,8 +14,11 @@ gdjs.SceneStack = function(runtimeGame) {
 
     this._runtimeGame = runtimeGame;
 
-    /** @type gdjs.RuntimeScene[] */
-	this._stack = [];
+    /** @type {gdjs.RuntimeScene[]} */
+    this._stack = [];
+
+    /** @type {boolean} */
+    this._wasFirstSceneLoaded = false;
 };
 
 /**
@@ -70,6 +73,8 @@ gdjs.SceneStack.prototype.pop = function() {
 
     // Unload the current scene
     var scene = this._stack.pop();
+    if (!scene) return null;
+
     scene.unloadScene();
 
     // Tell the new current scene it's being resumed
@@ -91,6 +96,7 @@ gdjs.SceneStack.prototype.push = function(newSceneName, externalLayoutName) {
     // Load the new one
     var newScene = new gdjs.RuntimeScene(this._runtimeGame);
     newScene.loadFromScene(this._runtimeGame.getSceneData(newSceneName));
+    this._wasFirstSceneLoaded = true;
 
     //Optionally create the objects from an external layout.
     if (externalLayoutName) {
@@ -108,13 +114,13 @@ gdjs.SceneStack.prototype.replace = function(newSceneName, clear) {
         // Unload all the scenes
         while (this._stack.length !== 0) {
             var scene = this._stack.pop();
-            scene.unloadScene();
+            if (scene) scene.unloadScene();
         }
     } else {
         // Unload the current scene
         if (this._stack.length !== 0) {
             var scene = this._stack.pop();
-            scene.unloadScene();
+            if (scene) scene.unloadScene();
         }
     }
 
@@ -129,3 +135,10 @@ gdjs.SceneStack.prototype.getCurrentScene = function() {
 
 	return this._stack[this._stack.length - 1];
 };
+
+/**
+ * Return true if a scene was loaded, false otherwise (i.e: game not yet started).
+ */
+gdjs.SceneStack.prototype.wasFirstSceneLoaded = function() {
+    return this._wasFirstSceneLoaded;
+}
